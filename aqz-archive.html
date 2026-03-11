@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AQZ — ARCHIVE</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,700;1,300&family=Noto+Serif+SC:wght@200;300;400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{
+  --Y:#d4ff00;
+  --YD:#a8cc00;
+  --K:#080808;
+  --K2:#0e0e0e;
+  --K3:#161616;
+  --G:#242424;
+  --G2:#484848;
+  --G3:#888;
+  --W:#f0ede5;
+  --W2:rgba(240,237,229,.5);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:auto;}
+body{background:var(--K);color:var(--W);font-family:'IBM Plex Mono',monospace;overflow-x:hidden;cursor:none;}
+
+/* ══ CURSOR ══ */
+#CUR{position:fixed;z-index:9999;pointer-events:none;width:10px;height:10px;border-radius:50%;background:var(--Y);mix-blend-mode:difference;transform:translate(-50%,-50%);transition:width .2s,height .2s,border-radius .2s;}
+#CUR2{position:fixed;z-index:9998;pointer-events:none;width:42px;height:42px;border-radius:50%;border:1px solid rgba(212,255,0,.22);transform:translate(-50%,-50%);transition:width .3s,height .3s;}
+body.hov #CUR{width:56px;height:56px;border-radius:3px;}
+body.hov #CUR2{opacity:0;}
+
+/* Lando-style cursor blob — reacts to mouse position */
+#BLOB{
+  position:fixed;pointer-events:none;z-index:2;
+  width:320px;height:320px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(212,255,0,.12) 0%, transparent 70%);
+  transform:translate(-50%,-50%);
+  transition:opacity .4s;
+  filter:blur(40px);
+  opacity:0;
+}
+
+/* ══ LOADER ══ */
+#LOAD{
+  position:fixed;inset:0;z-index:8000;background:var(--Y);
+  display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;padding:4rem;
+  overflow:hidden;
+}
+.ld-name{font-family:'Anton',sans-serif;font-size:clamp(5rem,20vw,17rem);line-height:.82;letter-spacing:-.03em;color:var(--K);overflow:hidden;}
+.ld-name span{display:block;transform:translateY(110%);}
+.ld-sub{font-family:'Anton',sans-serif;font-size:clamp(5rem,20vw,17rem);line-height:.82;letter-spacing:-.03em;color:rgba(0,0,0,.18);overflow:hidden;margin-bottom:3.5rem;}
+.ld-sub span{display:block;transform:translateY(110%);}
+.ld-bar-wrap{width:100%;height:1px;background:rgba(0,0,0,.18);margin-bottom:1.2rem;}
+.ld-fill{height:100%;width:0%;background:var(--K);}
+.ld-row{display:flex;justify-content:space-between;}
+.ld-pct{font-size:.6rem;letter-spacing:.3em;color:rgba(0,0,0,.45);}
+.ld-status{font-size:.58rem;letter-spacing:.25em;color:rgba(0,0,0,.3);text-transform:uppercase;}
+
+/* ══ NAV ══ */
+#NAV{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  padding:1.4rem 2.5rem;display:flex;justify-content:space-between;align-items:center;
+  opacity:0;transition:background .4s,border-color .4s;
+  border-bottom:1px solid transparent;
+}
+#NAV.scrolled{background:rgba(8,8,8,.94);backdrop-filter:blur(14px);border-bottom-color:var(--G);}
+.nav-left{display:flex;align-items:center;gap:.8rem;}
+.nav-logo{font-family:'Anton',sans-serif;font-size:1.1rem;letter-spacing:.18em;color:var(--K);background:var(--Y);padding:.25rem .7rem;line-height:1;}
+.nav-sub{font-size:.5rem;letter-spacing:.25em;color:var(--G3);text-transform:uppercase;}
+.nav-links{display:flex;gap:2.5rem;list-style:none;}
+.nav-links a{color:var(--G3);text-decoration:none;font-size:.55rem;letter-spacing:.25em;text-transform:uppercase;transition:color .3s;}
+.nav-links a:hover,.nav-links a.on{color:var(--Y);}
+.nav-filters{display:flex;gap:.4rem;}
+.nfb{padding:.28rem .75rem;border:1px solid var(--G2);background:none;font-family:'IBM Plex Mono',monospace;font-size:.5rem;letter-spacing:.18em;text-transform:uppercase;color:var(--G3);cursor:none;transition:all .25s;}
+.nfb:hover,.nfb.on{border-color:var(--Y);color:var(--Y);background:rgba(212,255,0,.06);}
+
+/* ══ HERO ══ */
+#HERO{
+  min-height:100vh;position:relative;
+  display:grid;grid-template-columns:1fr 1fr;
+  overflow:hidden;
+}
+/* LEFT — lime */
+.hero-l{
+  background:var(--Y);
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  padding:9rem 3rem 4rem;
+  z-index:1;
+}
+.hero-l-grid{
+  position:absolute;inset:0;
+  background-image:linear-gradient(rgba(0,0,0,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.06) 1px,transparent 1px);
+  background-size:52px 52px;
+}
+.hero-archive-badge{
+  position:absolute;top:2rem;left:3rem;
+  display:flex;flex-direction:column;gap:.3rem;
+}
+.hero-archive-badge span{font-size:.48rem;letter-spacing:.28em;text-transform:uppercase;color:rgba(0,0,0,.38);}
+.hero-archive-badge strong{font-size:.48rem;letter-spacing:.2em;color:rgba(0,0,0,.65);font-weight:400;}
+.hero-title{
+  font-family:'Anton',sans-serif;
+  font-size:clamp(5rem,12vw,11rem);
+  line-height:.84;letter-spacing:-.02em;
+  color:var(--K);position:relative;z-index:1;
+}
+.ht-line{overflow:hidden;display:block;}
+.ht-w{display:inline-block;transform:translateY(108%);}
+.hero-desc-row{
+  display:flex;align-items:flex-end;gap:2rem;
+  margin-top:2.5rem;position:relative;z-index:1;
+  opacity:0;transform:translateY(14px);
+}
+.hero-desc{
+  font-family:'Noto Serif SC',sans-serif;font-weight:200;font-style:italic;
+  font-size:.82rem;line-height:1.9;color:rgba(0,0,0,.55);
+  max-width:260px;
+}
+.hero-scroll-btn{
+  flex-shrink:0;
+  width:44px;height:44px;border:1.5px solid rgba(0,0,0,.2);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;color:rgba(0,0,0,.5);
+  animation:bob 2.5s ease-in-out infinite;
+  margin-left:auto;
+}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+
+/* RIGHT — 3D canvas */
+.hero-r{
+  background:var(--K);
+  position:relative;overflow:hidden;
+  border-left:1px solid var(--G);
+}
+#THREECANVAS{position:absolute;inset:0;width:100%!important;height:100%!important;}
+.hero-r-overlay{
+  position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:radial-gradient(ellipse 80% 80% at 50% 50%,transparent 50%,rgba(8,8,8,.7) 100%);
+}
+.hero-r-label{
+  position:absolute;bottom:2rem;right:2.5rem;z-index:3;
+  text-align:right;
+}
+.hero-r-label span{display:block;font-size:.48rem;letter-spacing:.25em;text-transform:uppercase;color:var(--G3);}
+.hero-r-label strong{font-size:.48rem;letter-spacing:.2em;color:var(--Y);font-weight:400;}
+.hero-r-hint{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:3;text-align:center;pointer-events:none;
+  opacity:0;transition:opacity .5s;
+}
+.hero-r-hint span{font-size:.5rem;letter-spacing:.28em;text-transform:uppercase;color:rgba(212,255,0,.35);}
+
+/* ══ TICKER ══ */
+.ticker{overflow:hidden;border-top:1px solid var(--G);border-bottom:1px solid var(--G);background:var(--K2);padding:.85rem 0;position:relative;z-index:1;}
+.ticker-t{display:flex;white-space:nowrap;animation:tick 24s linear infinite;}
+.ticker-t:hover{animation-play-state:paused;}
+.ti{display:inline-flex;align-items:center;gap:1.6rem;padding:0 1.6rem;font-family:'Anton',sans-serif;font-size:.95rem;letter-spacing:.1em;text-transform:uppercase;color:var(--G);flex-shrink:0;transition:color .3s;}
+.ti:hover{color:var(--G2);}
+.tid{width:5px;height:5px;border-radius:50%;background:var(--Y);flex-shrink:0;}
+@keyframes tick{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* ══ FEED ══ */
+#FEED{padding:0 2.5rem 6rem;}
+.feed-hdr{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:3rem 0 2rem;border-bottom:1px solid var(--G);margin-bottom:2px;
+}
+.feed-hdr-l{display:flex;flex-direction:column;gap:.4rem;}
+.feed-title{font-size:.52rem;letter-spacing:.35em;text-transform:uppercase;color:var(--G3);}
+.feed-count{font-family:'Anton',sans-serif;font-size:1rem;letter-spacing:.12em;color:var(--Y);}
+.feed-sort{font-size:.5rem;letter-spacing:.2em;color:var(--G2);text-transform:uppercase;}
+
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:1px;background:var(--G);}
+
+/* ── entry base ── */
+.e{
+  background:var(--K);padding:2rem;
+  position:relative;overflow:hidden;cursor:none;
+  transition:background .35s;
+}
+.e:hover{background:var(--K3);}
+.e::after{content:'';position:absolute;left:0;top:0;bottom:0;width:0;background:var(--Y);transition:width .35s cubic-bezier(.77,0,.18,1);}
+.e:hover::after{width:2px;}
+/* lime variant */
+.e.lime{background:var(--Y);color:var(--K);}
+.e.lime:hover{background:#c8f000;}
+.e.lime::after{background:var(--K);}
+.e.lime .e-id,.e.lime .e-date,.e.lime .e-body{color:rgba(0,0,0,.5);}
+.e.lime .e-title{color:var(--K);}
+.e.lime .e-arrow{color:rgba(0,0,0,.4);}
+.e.lime:hover .e-arrow{color:var(--K);}
+.e.lime .e-type{border-color:rgba(0,0,0,.2);color:rgba(0,0,0,.5);}
+
+/* spans */
+.e-w8{grid-column:span 8;} .e-w6{grid-column:span 6;} .e-w4{grid-column:span 4;} .e-w12{grid-column:span 12;} .e-w5{grid-column:span 5;} .e-w7{grid-column:span 7;} .e-w3{grid-column:span 3;}
+
+.e-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;}
+.e-id{font-size:.46rem;letter-spacing:.28em;color:var(--G3);text-transform:uppercase;}
+.e-type{font-size:.46rem;letter-spacing:.16em;text-transform:uppercase;padding:.18rem .55rem;border:1px solid var(--G2);color:var(--G3);transition:border-color .3s,color .3s;}
+.e:hover .e-type{border-color:var(--Y);color:var(--Y);}
+.e.lime .e-type.思考{border-color:rgba(0,0,0,.3);color:rgba(0,0,0,.6);}
+.e-type.思考{border-color:rgba(212,255,0,.3);color:var(--Y);}
+.e-type.日记{border-color:rgba(240,237,229,.15);color:var(--W2);}
+.e-type.收藏{border-color:rgba(140,160,255,.2);color:rgba(170,185,255,.7);}
+.e-type.照片{border-color:rgba(255,200,120,.2);color:rgba(255,210,140,.7);}
+
+.e-title{font-family:'Noto Serif SC',sans-serif;font-weight:300;font-size:clamp(1rem,2.2vw,1.55rem);line-height:1.25;color:var(--W);margin-bottom:.9rem;letter-spacing:.02em;}
+.e-title.lg{font-size:clamp(1.5rem,3vw,2.3rem);}
+.e-body{font-family:'Noto Serif SC',sans-serif;font-weight:200;font-size:.8rem;line-height:1.9;color:var(--G3);display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;}
+.e-foot{display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;padding-top:1.1rem;border-top:1px solid var(--G);}
+.e.lime .e-foot{border-top-color:rgba(0,0,0,.12);}
+.e-date{font-size:.46rem;letter-spacing:.22em;color:var(--G2);text-transform:uppercase;}
+.e-arrow{font-size:.8rem;color:var(--G2);transition:transform .3s,color .3s;}
+.e:hover .e-arrow{transform:translateX(4px);color:var(--Y);}
+.e-bignum{font-family:'Anton',sans-serif;font-size:5rem;color:transparent;-webkit-text-stroke:1px rgba(212,255,0,.08);line-height:.85;margin-bottom:.4rem;pointer-events:none;}
+.e.lime .e-bignum{-webkit-text-stroke:1px rgba(0,0,0,.1);}
+
+/* quote */
+.e-quote{font-family:'Noto Serif SC',sans-serif;font-weight:200;font-style:italic;font-size:clamp(1rem,2.3vw,1.7rem);line-height:1.6;color:var(--W2);letter-spacing:.03em;padding:.5rem 0;}
+.e.lime .e-quote{color:rgba(0,0,0,.65);}
+.e-quote-src{font-size:.46rem;letter-spacing:.25em;text-transform:uppercase;color:var(--G2);margin-top:.8rem;}
+.e.lime .e-quote-src{color:rgba(0,0,0,.38);}
+
+/* media stack */
+.mi{display:flex;align-items:center;gap:1rem;padding:.65rem 0;border-bottom:1px solid var(--G);}
+.mi:last-child{border-bottom:none;}
+.e.lime .mi{border-bottom-color:rgba(0,0,0,.1);}
+.mi-i{font-size:.48rem;color:var(--G2);width:1.4rem;flex-shrink:0;}
+.mi-info{flex:1;}
+.mi-t{font-size:.76rem;letter-spacing:.04em;color:var(--W);margin-bottom:.18rem;}
+.e.lime .mi-t{color:var(--K);}
+.mi-s{font-size:.56rem;letter-spacing:.1em;color:var(--G3);}
+.mi-b{font-size:.42rem;letter-spacing:.14em;text-transform:uppercase;padding:.15rem .45rem;border:1px solid var(--G2);color:var(--G3);flex-shrink:0;}
+.mi-b.f{border-color:rgba(255,150,100,.2);color:rgba(255,180,130,.55);}
+.mi-b.b{border-color:rgba(100,200,255,.2);color:rgba(130,200,255,.55);}
+.mi-b.m{border-color:rgba(200,150,255,.2);color:rgba(210,170,255,.55);}
+
+/* ══ PHOTOS SECTION ══ */
+#PHOTOS{padding:0 2.5rem 2.5rem;}
+.photos-hdr{display:flex;justify-content:space-between;align-items:center;padding:3rem 0 2rem;border-bottom:1px solid var(--G);margin-bottom:2px;}
+.photos-hdr-title{display:flex;align-items:center;gap:1rem;font-size:.52rem;letter-spacing:.35em;text-transform:uppercase;color:var(--G3);}
+.photos-hdr-title span{color:var(--Y);}
+.photo-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:1px;background:var(--G);}
+.photo-slot{
+  background:var(--K2);position:relative;overflow:hidden;cursor:none;
+}
+.photo-slot.tall{grid-column:span 4;aspect-ratio:3/4;}
+.photo-slot.wide{grid-column:span 8;aspect-ratio:16/9;}
+.photo-slot.sq{grid-column:span 3;aspect-ratio:1;}
+.photo-slot.sq2{grid-column:span 6;aspect-ratio:4/3;}
+/* placeholder pattern */
+.photo-slot::before{
+  content:'';position:absolute;inset:0;
+  background-image:linear-gradient(rgba(212,255,0,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(212,255,0,.03) 1px,transparent 1px);
+  background-size:28px 28px;
+}
+.photo-inner{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:.6rem;
+  transition:background .35s;
+}
+.photo-slot:hover .photo-inner{background:rgba(212,255,0,.03);}
+.photo-placeholder-icon{font-size:1.5rem;color:var(--G);transition:color .3s;}
+.photo-slot:hover .photo-placeholder-icon{color:var(--G2);}
+.photo-placeholder-txt{font-size:.46rem;letter-spacing:.25em;text-transform:uppercase;color:var(--G2);}
+.photo-caption{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:1rem;
+  background:linear-gradient(transparent,rgba(8,8,8,.9));
+  transform:translateY(100%);
+  transition:transform .35s cubic-bezier(.77,0,.18,1);
+}
+.photo-slot:hover .photo-caption{transform:translateY(0);}
+.photo-caption span{font-size:.46rem;letter-spacing:.2em;text-transform:uppercase;color:var(--G3);}
+.photo-date{position:absolute;top:.8rem;left:.8rem;font-size:.44rem;letter-spacing:.2em;color:var(--G2);}
+.upload-hint{
+  grid-column:span 12;padding:2rem;background:var(--K);
+  display:flex;align-items:center;justify-content:center;gap:1.5rem;
+  border:1px dashed var(--G2);border-left:none;border-right:none;
+}
+.upload-hint span{font-size:.52rem;letter-spacing:.25em;text-transform:uppercase;color:var(--G3);}
+.upload-hint strong{color:var(--Y);font-weight:400;}
+
+/* ══ BIG STATEMENT ══ */
+#STMT{
+  min-height:60vh;background:var(--Y);
+  display:flex;align-items:center;justify-content:center;
+  padding:6rem 3rem;position:relative;overflow:hidden;
+  border-top:1px solid var(--G);
+}
+#STMT::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(0,0,0,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.05) 1px,transparent 1px);background-size:52px 52px;}
+.stmt-inner{position:relative;z-index:1;text-align:center;max-width:900px;}
+.stmt-label{font-size:.5rem;letter-spacing:.35em;text-transform:uppercase;color:rgba(0,0,0,.35);margin-bottom:2rem;}
+.stmt-text{
+  font-family:'Anton',sans-serif;
+  font-size:clamp(3.5rem,8vw,7.5rem);
+  line-height:.88;letter-spacing:-.01em;color:var(--K);
+}
+.stmt-text .line{overflow:hidden;display:block;}
+.stmt-text .w{display:inline-block;transform:translateY(108%);}
+
+/* ══ FOOTER ══ */
+footer{border-top:1px solid var(--G);padding:2.5rem;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:2rem;}
+.f-id{display:flex;flex-direction:column;gap:.4rem;}
+.f-name{font-family:'Anton',sans-serif;font-size:.9rem;letter-spacing:.15em;color:var(--K);background:var(--Y);padding:.2rem .6rem;display:inline-block;width:fit-content;}
+.f-desc{font-size:.46rem;letter-spacing:.22em;color:var(--G3);text-transform:uppercase;margin-top:.4rem;}
+.f-mid{text-align:center;font-size:.46rem;letter-spacing:.2em;color:var(--G2);text-transform:uppercase;}
+.f-links{display:flex;justify-content:flex-end;gap:1.5rem;}
+.f-links a{font-size:.46rem;letter-spacing:.2em;text-transform:uppercase;color:var(--G3);text-decoration:none;transition:color .3s;}
+.f-links a:hover{color:var(--Y);}
+.f-status{display:flex;align-items:center;justify-content:flex-end;gap:.4rem;margin-top:.5rem;font-size:.44rem;letter-spacing:.18em;text-transform:uppercase;color:var(--G3);}
+.f-dot{width:4px;height:4px;border-radius:50%;background:var(--Y);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+
+/* ══ SCROLL REVEAL ══ */
+.sr{opacity:0;transform:translateY(22px);transition:opacity .7s,transform .7s;}
+.sr.vis{opacity:1;transform:translateY(0);}
+.sr.d1{transition-delay:.07s;}.sr.d2{transition-delay:.14s;}.sr.d3{transition-delay:.21s;}.sr.d4{transition-delay:.28s;}
+.e.hidden{opacity:0;pointer-events:none;transform:scale(.97);}
+</style>
+</head>
+<body>
+
+<!-- LOADER (lime background) -->
+<div id="LOAD">
+  <div class="ld-name"><span>AnqingZe</span></div>
+  <div class="ld-sub"><span>ARCHIVE</span></div>
+  <div class="ld-bar-wrap"><div class="ld-fill" id="LF"></div></div>
+  <div class="ld-row">
+    <div class="ld-pct" id="LP">000</div>
+    <div class="ld-status" id="LS">LOADING</div>
+  </div>
+</div>
+
+<div id="CUR"></div>
+<div id="CUR2"></div>
+<div id="BLOB"></div>
+
+<!-- NAV -->
+<nav id="NAV">
+  <div class="nav-left">
+    <div class="nav-logo">AQZ</div>
+    <div class="nav-sub">PERSONAL ARCHIVE · v2026</div>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#FEED" class="on">档案</a></li>
+    <li><a href="#PHOTOS">照片</a></li>
+    <li><a href="#STMT">关于</a></li>
+  </ul>
+  <div class="nav-filters">
+    <button class="nfb on" data-f="all">全部</button>
+    <button class="nfb" data-f="思考">思考</button>
+    <button class="nfb" data-f="日记">日记</button>
+    <button class="nfb" data-f="收藏">收藏</button>
+  </div>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<section id="HERO">
+  <!-- LEFT: lime, title -->
+  <div class="hero-l">
+    <div class="hero-l-grid"></div>
+    <div class="hero-archive-badge">
+      <span>ARCHIVE SYSTEM</span>
+      <strong>AQZ-PERSONAL-2026</strong>
+      <span id="HDATE" style="margin-top:.4rem;"></span>
+    </div>
+    <h1 class="hero-title">
+      <span class="ht-line"><span class="ht-w">AQZ</span></span>
+      <span class="ht-line"><span class="ht-w">ARCHI</span></span>
+      <span class="ht-line"><span class="ht-w">VE</span></span>
+    </h1>
+    <div class="hero-desc-row">
+      <p class="hero-desc">思考的轨迹、生活的碎片、发现的好作品——<br>一切值得被记录的，都在这里落脚。</p>
+      <div class="hero-scroll-btn">↓</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Three.js 3D object -->
+  <div class="hero-r" id="HERO_R">
+    <canvas id="THREECANVAS"></canvas>
+    <div class="hero-r-overlay"></div>
+    <div class="hero-r-label">
+      <span>THOUGHT LATTICE</span>
+      <strong>AQZ-OBJECT-001</strong>
+    </div>
+    <div class="hero-r-hint" id="RHINT">
+      <span>DRAG TO ROTATE</span>
+    </div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-t">
+    <div class="ti"><div class="tid"></div>思考</div>
+    <div class="ti"><div class="tid"></div>日记</div>
+    <div class="ti"><div class="tid"></div>收藏</div>
+    <div class="ti"><div class="tid"></div>照片</div>
+    <div class="ti"><div class="tid"></div>引用</div>
+    <div class="ti"><div class="tid"></div>书影音</div>
+    <div class="ti"><div class="tid"></div>碎片</div>
+    <div class="ti"><div class="tid"></div>思考</div>
+    <div class="ti"><div class="tid"></div>日记</div>
+    <div class="ti"><div class="tid"></div>收藏</div>
+    <div class="ti"><div class="tid"></div>照片</div>
+    <div class="ti"><div class="tid"></div>引用</div>
+    <div class="ti"><div class="tid"></div>书影音</div>
+    <div class="ti"><div class="tid"></div>碎片</div>
+  </div>
+</div>
+
+<!-- ═══ FEED ═══ -->
+<section id="FEED">
+  <div class="feed-hdr">
+    <div class="feed-hdr-l">
+      <div class="feed-title">// ALL RECORDS — CHRONOLOGICAL</div>
+      <div class="feed-count">24 ENTRIES</div>
+    </div>
+    <div class="feed-sort">LATEST FIRST</div>
+  </div>
+
+  <div class="grid">
+
+    <!-- 1: BIG THOUGHT — lime -->
+    <div class="e e-w8 lime sr" data-type="思考">
+      <div class="e-hd"><div class="e-id">AQZ-024</div><div class="e-type 思考">思考</div></div>
+      <div class="e-bignum">01</div>
+      <div class="e-title lg">人为什么需要记录？</div>
+      <div class="e-body">记录不是为了回忆，而是为了让当下变得真实。当你把一件事写下来的那一刻，它才真正发生了。我越来越觉得，未被记录的经验某种意义上是不存在的——它只是在神经元之间漂浮的噪声，终将消散。</div>
+      <div class="e-foot"><div class="e-date">2026.03.08</div><div class="e-arrow">→</div></div>
+    </div>
+
+    <div class="e e-w4 sr d1" data-type="日记">
+      <div class="e-hd"><div class="e-id">AQZ-023</div><div class="e-type 日记">日记</div></div>
+      <div class="e-title">三月第一周</div>
+      <div class="e-body">窗外下雨，煮了一壶茶，重新翻出了 Tarkovsky 的《雕刻时光》。有些书只有在特定天气里才能读进去。</div>
+      <div class="e-foot"><div class="e-date">2026.03.07</div><div class="e-arrow">→</div></div>
+    </div>
+
+    <!-- 2: FULL QUOTE — dark -->
+    <div class="e e-w12 sr" data-type="思考" style="background:var(--K2);">
+      <div class="e-hd"><div class="e-id">AQZ-022</div><div class="e-type 思考">引用</div></div>
+      <div class="e-quote">「风格不是一种选择，它是你所有选择的总和。」</div>
+      <div class="e-quote-src">— 来自某本忘了名字的设计书 / 2026.03.02</div>
+    </div>
+
+    <!-- 3 -->
+    <div class="e e-w4 sr" data-type="收藏">
+      <div class="e-hd"><div class="e-id">AQZ-021</div><div class="e-type 收藏">收藏 · 电影</div></div>
+      <div class="e-title">最近看的片子</div>
+      <div class="mi"><div class="mi-i">01</div><div class="mi-info"><div class="mi-t">Past Lives</div><div class="mi-s">Celine Song · 2023</div></div><div class="mi-b f">FILM</div></div>
+      <div class="mi"><div class="mi-i">02</div><div class="mi-info"><div class="mi-t">The Zone of Interest</div><div class="mi-s">Glazer · 2023</div></div><div class="mi-b f">FILM</div></div>
+      <div class="mi"><div class="mi-i">03</div><div class="mi-info"><div class="mi-t">Anora</div><div class="mi-s">Sean Baker · 2024</div></div><div class="mi-b f">FILM</div></div>
+    </div>
+
+    <div class="e e-w4 sr d1" data-type="思考">
+      <div class="e-hd"><div class="e-id">AQZ-020</div><div class="e-type 思考">思考</div></div>
+      <div class="e-title">关于「无聊」的价值</div>
+      <div class="e-body">我们这一代人是第一批真正不会感到无聊的人。无聊曾经是创造力的温床，而现在它被无限滚动彻底消灭了。每次想拿起手机的冲动，我都试图问自己：这个空白是不是正在孕育什么？</div>
+      <div class="e-foot"><div class="e-date">2026.02.28</div><div class="e-arrow">→</div></div>
+    </div>
+
+    <div class="e e-w4 sr d2" data-type="日记">
+      <div class="e-hd"><div class="e-id">AQZ-019</div><div class="e-type 日记">日记</div></div>
+      <div class="e-title">在咖啡馆写的随想</div>
+      <div class="e-body">点了一杯 flat white，坐了三小时。窗外一直有人经过，每个人都像在赶去某个重要的地方。我突然觉得「虚度时光」这个词很有问题——谁来定义虚度？</div>
+      <div class="e-foot"><div class="e-date">2026.02.10</div><div class="e-arrow">→</div></div>
+    </div>
+
+    <!-- MUSIC — lime full width -->
+    <div class="e e-w12 lime sr" data-type="收藏">
+      <div class="e-hd"><div class="e-id">AQZ-018</div><div class="e-type 收藏">收藏 · 音乐</div></div>
+      <div class="e-title" style="margin-bottom:1.5rem;">近期歌单</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:rgba(0,0,0,.12);">
+        <div style="background:rgba(0,0,0,.06);padding:1rem;"><div class="mi-t" style="color:var(--K);">Bright Future</div><div class="mi-s">Adrianne Lenker</div></div>
+        <div style="background:rgba(0,0,0,.06);padding:1rem;"><div class="mi-t" style="color:var(--K);">Imaginal Disk</div><div class="mi-s">Magdalena Bay</div></div>
+        <div style="background:rgba(0,0,0,.06);padding:1rem;"><div class="mi-t" style="color:var(--K);">Short n' Sweet</div><div class="mi-s">Sabrina Carpenter</div></div>
+        <div style="background:rgba(0,0,0,.06);padding:1rem;"><div class="mi-t" style="color:var(--K);">Manning Fireworks</div><div class="mi-s">MJ Lenderman</div></div>
+        <div style="background:rgba(0,0,0,.06);padding:1rem;"><div class="mi-t" style="color:var(--K);">Chromakopia</div><div class="mi-s">Tyler, the Creator</div></div>
+      </div>
+    </div>
+
+    <!-- book + thought -->
+    <div class="e e-w6 sr" data-type="收藏">
+      <div class="e-hd"><div class="e-id">AQZ-017</div><div class="e-type 收藏">收藏 · 书</div></div>
+      <div class="e-title">近期在读</div>
+      <div class="mi"><div class="mi-i">01</div><div class="mi-info"><div class="mi-t">《雕刻时光》</div><div class="mi-s">安德烈·塔可夫斯基</div></div><div class="mi-b b">BOOK</div></div>
+      <div class="mi"><div class="mi-i">02</div><div class="mi-info"><div class="mi-t">《存在与时间》</div><div class="mi-s">马丁·海德格尔</div></div><div class="mi-b b">BOOK</div></div>
+      <div class="mi"><div class="mi-i">03</div><div class="mi-info"><div class="mi-t">《置身事内》</div><div class="mi-s">兰小欢</div></div><div class="mi-b b">BOOK</div></div>
+    </div>
+
+    <div class="e e-w6 sr d1" data-type="思考">
+      <div class="e-hd"><div class="e-id">AQZ-016</div><div class="e-type 思考">思考</div></div>
+      <div class="e-title">语言的边界即是世界的边界</div>
+      <div class="e-body">维特根斯坦那句话一直让我着迷。我发现每当我学会一个新词，我就好像获得了感知一种新颜色的能力。语言不只是描述世界，它在某种程度上生成世界。</div>
+      <div class="e-foot"><div class="e-date">2026.02.20</div><div class="e-arrow">→</div></div>
+    </div>
+
+    <!-- BIG THOUGHT — lime -->
+    <div class="e e-w12 lime sr" data-type="思考">
+      <div class="e-hd"><div class="e-id">AQZ-015</div><div class="e-type 思考">思考 · 长</div></div>
+      <div class="e-bignum" style="font-size:3.5rem;">「酷」是什么？</div>
+      <div class="e-quote" style="font-size:clamp(1rem,2.5vw,1.6rem);max-width:800px;">我观察了很久，发现真正酷的人有一个共同特征：他们对自己的行为有一种内在自洽性，不依赖外部认可来维持。酷不是一种风格，而是一种与自我的关系——一种在任何场合都不感到需要解释自己的淡定。模仿来的酷是最不酷的东西。</div>
+      <div class="e-foot"><div class="e-date">2026.02.14</div><div class="e-arrow">→</div></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══ PHOTOS ═══ -->
+<section id="PHOTOS">
+  <div class="photos-hdr sr">
+    <div class="photos-hdr-title">// <span>照片档案</span> — PHOTO RECORDS</div>
+    <div class="feed-sort">用你的照片替换占位</div>
+  </div>
+
+  <div class="photo-grid">
+    <!-- tall left -->
+    <div class="photo-slot tall sr">
+      <div class="photo-inner">
+        <div class="photo-placeholder-icon">⬜</div>
+        <div class="photo-placeholder-txt">PHOTO · AQZ-P001</div>
+      </div>
+      <div class="photo-date">2026.03</div>
+      <div class="photo-caption"><span>在这里写照片标题</span></div>
+    </div>
+    <!-- wide right -->
+    <div class="photo-slot wide sr d1">
+      <div class="photo-inner">
+        <div class="photo-placeholder-icon">⬜</div>
+        <div class="photo-placeholder-txt">PHOTO · AQZ-P002</div>
+      </div>
+      <div class="photo-date">2026.02</div>
+      <div class="photo-caption"><span>横幅大照片位</span></div>
+    </div>
+
+    <!-- row 2: 4 square -->
+    <div class="photo-slot sq sr"><div class="photo-inner"><div class="photo-placeholder-icon">⬜</div><div class="photo-placeholder-txt">P003</div></div><div class="photo-caption"><span>碎片 001</span></div></div>
+    <div class="photo-slot sq sr d1"><div class="photo-inner"><div class="photo-placeholder-icon">⬜</div><div class="photo-placeholder-txt">P004</div></div><div class="photo-caption"><span>碎片 002</span></div></div>
+    <div class="photo-slot sq2 sr d2">
+      <div class="photo-inner"><div class="photo-placeholder-icon">⬜</div><div class="photo-placeholder-txt">PHOTO · AQZ-P005 · FEATURED</div></div>
+      <div class="photo-date">2026.01</div>
+      <div class="photo-caption"><span>特写大图</span></div>
+    </div>
+    <div class="photo-slot sq sr d3"><div class="photo-inner"><div class="photo-placeholder-icon">⬜</div><div class="photo-placeholder-txt">P006</div></div><div class="photo-caption"><span>碎片 003</span></div></div>
+
+    <!-- hint row -->
+    <div class="upload-hint sr">
+      <span>把你的照片用 <strong>&lt;img&gt;</strong> 标签替换这些占位格子 — 直接把 src 改为你的图片路径即可</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ STATEMENT ═══ -->
+<section id="STMT">
+  <div class="stmt-inner">
+    <div class="stmt-label">// AQZ-PERSONAL-STATEMENT-2026</div>
+    <div class="stmt-text">
+      <span class="line"><span class="w">这个档案室</span></span>
+      <span class="line"><span class="w">不是为了</span></span>
+      <span class="line"><span class="w">展示</span></span>
+      <span class="line" style="color:rgba(0,0,0,.25)"><span class="w">而是为了</span></span>
+      <span class="line"><span class="w">留存</span></span>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="f-id">
+    <div class="f-name">AQZ</div>
+    <div class="f-desc">AnqingZe · Personal Archive · Since 2026</div>
+  </div>
+  <div class="f-mid">© 2026 — ALL RECORDS BELONG TO THE AUTHOR</div>
+  <div>
+    <div class="f-links">
+      <a href="#">Instagram</a><a href="#">小红书</a><a href="#">Letterboxd</a><a href="#">邮件</a>
+    </div>
+    <div class="f-status"><div class="f-dot"></div>ARCHIVE ONLINE</div>
+  </div>
+</footer>
+
+<!-- ═══════════════════ JS ═══════════════════ -->
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+/* ── CURSOR + BLOB ── */
+const CUR=document.getElementById('CUR'), CUR2=document.getElementById('CUR2'), BLOB=document.getElementById('BLOB');
+let mx=0,my=0,cx=0,cy=0;
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX; my=e.clientY;
+  CUR.style.left=mx+'px'; CUR.style.top=my+'px';
+  BLOB.style.left=mx+'px'; BLOB.style.top=my+'px';
+});
+(function loop(){
+  cx+=(mx-cx)*.1; cy+=(my-cy)*.1;
+  CUR2.style.left=cx+'px'; CUR2.style.top=cy+'px';
+  requestAnimationFrame(loop);
+})();
+document.querySelectorAll('a,button,.e,.photo-slot').forEach(el=>{
+  el.addEventListener('mouseenter',()=>document.body.classList.add('hov'));
+  el.addEventListener('mouseleave',()=>document.body.classList.remove('hov'));
+});
+// blob visible only in hero
+const heroEl=document.getElementById('HERO');
+const blobObs=new IntersectionObserver(entries=>{
+  BLOB.style.opacity=entries[0].isIntersecting?'1':'0';
+},{threshold:.1});
+blobObs.observe(heroEl);
+
+/* ── THREE.JS 3D OBJECT ── */
+(function initThree(){
+  const canvas=document.getElementById('THREECANVAS');
+  const container=document.getElementById('HERO_R');
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setClearColor(0x000000,0);
+
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(45,1,0.1,100);
+  camera.position.z=4.5;
+
+  function resize(){
+    const w=container.clientWidth, h=container.clientHeight;
+    renderer.setSize(w,h);
+    camera.aspect=w/h;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+  window.addEventListener('resize',resize);
+
+  // ICOSAHEDRON — wireframe + solid
+  const geo=new THREE.IcosahedronGeometry(1.4,2);
+
+  // outer wireframe
+  const wireMat=new THREE.MeshBasicMaterial({color:0xd4ff00,wireframe:true,transparent:true,opacity:.18});
+  const wireMesh=new THREE.Mesh(geo,wireMat);
+  scene.add(wireMesh);
+
+  // inner solid subtle
+  const solidMat=new THREE.MeshBasicMaterial({color:0x111111,transparent:true,opacity:.7,side:THREE.BackSide});
+  const solidMesh=new THREE.Mesh(geo,solidMat);
+  scene.add(solidMesh);
+
+  // Second outer ring — octahedron rotated
+  const geo2=new THREE.OctahedronGeometry(2,1);
+  const wire2Mat=new THREE.MeshBasicMaterial({color:0xd4ff00,wireframe:true,transparent:true,opacity:.06});
+  const wire2=new THREE.Mesh(geo2,wire2Mat);
+  scene.add(wire2);
+
+  // points on icosahedron
+  const ptGeo=new THREE.BufferGeometry().setFromPoints(
+    Array.from({length:120},()=>{
+      const v=new THREE.Vector3(
+  Math.random() * 2 - 1,
+  Math.random() * 2 - 1,
+  Math.random() * 2 - 1
+).normalize().multiplyScalar(1.42 + Math.random() * .08);
+      return v;
+    })
+  );
+  const ptMat=new THREE.PointsMaterial({color:0xd4ff00,size:.025,transparent:true,opacity:.55});
+  const pts=new THREE.Points(ptGeo,ptMat);
+  scene.add(pts);
+
+  // mouse drag rotation
+  let isDragging=false,prevX=0,prevY=0,rotX=0,rotY=0,velX=0,velY=0;
+  const hint=document.getElementById('RHINT');
+
+  container.addEventListener('mouseenter',()=>{hint.style.opacity='1';});
+  container.addEventListener('mouseleave',()=>{hint.style.opacity='0';isDragging=false;});
+  container.addEventListener('mousedown',e=>{isDragging=true;prevX=e.clientX;prevY=e.clientY;hint.style.opacity='0';});
+  window.addEventListener('mouseup',()=>{isDragging=false;});
+  window.addEventListener('mousemove',e=>{
+    if(!isDragging) return;
+    const dx=e.clientX-prevX, dy=e.clientY-prevY;
+    velX=dx*.008; velY=dy*.008;
+    rotY+=dx*.008; rotX+=dy*.008;
+    prevX=e.clientX; prevY=e.clientY;
+  });
+
+  // auto-rotate base
+  let time=0;
+  function animate(){
+    requestAnimationFrame(animate);
+    time+=0.005;
+    if(!isDragging){
+      velX*=.94; velY*=.94;
+      rotY+=.004+velX;
+      rotX+=.001+velY;
+    }
+    wireMesh.rotation.y=rotY;
+    wireMesh.rotation.x=rotX;
+    solidMesh.rotation.y=rotY;
+    solidMesh.rotation.x=rotX;
+    wire2.rotation.y=-rotY*.4;
+    wire2.rotation.x=rotX*.3+Math.sin(time)*.05;
+    pts.rotation.y=rotY*.8;
+    pts.rotation.x=rotX*.8;
+
+    // breathe
+    const scale=1+Math.sin(time*1.1)*.03;
+    wireMesh.scale.setScalar(scale);
+    pts.scale.setScalar(scale);
+
+    renderer.render(scene,camera);
+  }
+  animate();
+})();
+
+/* ── LOADER ── */
+const LF=document.getElementById('LF'),LP=document.getElementById('LP'),LS=document.getElementById('LS');
+const stages=['LOADING','PARSING RECORDS','BUILDING ARCHIVE','READY'];
+gsap.to('.ld-name span',{y:'0%',duration:.8,ease:'power4.out',delay:.1});
+gsap.to('.ld-sub span',{y:'0%',duration:.8,ease:'power4.out',delay:.22});
+let p=0;
+const iv=setInterval(()=>{
+  p+=Math.random()*11+2;
+  if(p>=100){p=100;clearInterval(iv);setTimeout(launch,350);}
+  LF.style.width=p+'%';
+  LP.textContent=String(Math.round(p)).padStart(3,'0');
+  LS.textContent=stages[Math.floor(p/25)]||stages[3];
+},80);
+
+function launch(){
+  gsap.timeline({onComplete:initPage})
+    .to('#LOAD',{yPercent:-100,duration:1,ease:'expo.inOut',delay:.1})
+    .to('#NAV',{opacity:1,duration:.5},'-=.3');
+}
+
+function initPage(){
+  // date
+  const d=new Date();
+  document.getElementById('HDATE').textContent=
+    d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0');
+
+  // hero title
+  gsap.to('.ht-w',{y:'0%',duration:1.1,ease:'power4.out',stagger:.12,delay:.05});
+  gsap.to('.hero-desc-row',{opacity:1,y:0,duration:.9,ease:'power3.out',delay:.6});
+
+  // statement text
+  gsap.to('.stmt-text .w',{
+    y:'0%',duration:1,ease:'power4.out',stagger:.1,
+    scrollTrigger:{trigger:'#STMT',start:'top 72%'}
+  });
+
+  // scroll reveal
+  const obs=new IntersectionObserver(es=>{
+    es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('vis');obs.unobserve(e.target);}});
+  },{threshold:.06});
+  document.querySelectorAll('.sr').forEach(el=>obs.observe(el));
+
+  // nav scroll
+  window.addEventListener('scroll',()=>{
+    document.getElementById('NAV').classList.toggle('scrolled',window.scrollY>80);
+  });
+
+  // filter
+  document.querySelectorAll('.nfb').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.nfb').forEach(b=>b.classList.remove('on'));
+      btn.classList.add('on');
+      const f=btn.dataset.f;
+      document.querySelectorAll('.e').forEach(card=>{
+        card.classList.toggle('hidden',f!=='all'&&card.dataset.type!==f);
+      });
+    });
+  });
+}
+</script>
+</body>
+</html>
