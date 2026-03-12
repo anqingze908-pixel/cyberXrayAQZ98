@@ -3,7 +3,838 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AQZ — ARCHIVE</title><!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AQZ — ARCHIVE</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,700;1,300&family=Noto+Serif+SC:wght@200;300;400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{
+  --Y:#d4ff00; --K:#080808; --K2:#0e0e0e; --K3:#161616;
+  --G:#242424; --G2:#484848; --G3:#888; --W:#f0ede5; --W2:rgba(240,237,229,.5);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:auto;}
+body{background:var(--K);color:var(--W);font-family:'IBM Plex Mono',monospace;overflow-x:hidden;cursor:none;}
+
+/* ── CURSOR ── */
+#CUR{position:fixed;z-index:9999;pointer-events:none;width:10px;height:10px;border-radius:50%;background:var(--Y);mix-blend-mode:difference;transform:translate(-50%,-50%);transition:width .2s,height .2s,border-radius .2s;}
+#CUR2{position:fixed;z-index:9998;pointer-events:none;width:42px;height:42px;border-radius:50%;border:1px solid rgba(212,255,0,.22);transform:translate(-50%,-50%);}
+body.hov #CUR{width:56px;height:56px;border-radius:3px;}
+body.hov #CUR2{opacity:0;}
+#BLOB{position:fixed;pointer-events:none;z-index:2;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(212,255,0,.1) 0%,transparent 70%);transform:translate(-50%,-50%);filter:blur(40px);opacity:0;transition:opacity .4s;}
+
+/* ── LOADER ── */
+#LOAD{position:fixed;inset:0;z-index:8000;background:var(--Y);display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;padding:4rem;overflow:hidden;}
+.ld-name{font-family:'Anton',sans-serif;font-size:clamp(5rem,20vw,17rem);line-height:.82;letter-spacing:-.03em;color:var(--K);overflow:hidden;}
+.ld-name span{display:block;transform:translateY(110%);}
+.ld-sub{font-family:'Anton',sans-serif;font-size:clamp(5rem,20vw,17rem);line-height:.82;letter-spacing:-.03em;color:rgba(0,0,0,.18);overflow:hidden;margin-bottom:3.5rem;}
+.ld-sub span{display:block;transform:translateY(110%);}
+.ld-bar-wrap{width:100%;height:1px;background:rgba(0,0,0,.18);margin-bottom:1.2rem;}
+.ld-fill{height:100%;width:0%;background:var(--K);}
+.ld-row{display:flex;justify-content:space-between;}
+.ld-pct{font-size:.6rem;letter-spacing:.3em;color:rgba(0,0,0,.45);}
+.ld-status{font-size:.58rem;letter-spacing:.25em;color:rgba(0,0,0,.3);text-transform:uppercase;}
+
+/* ── NAV ── */
+#NAV{position:fixed;top:0;left:0;right:0;z-index:1000;padding:1.4rem 2.5rem;display:flex;justify-content:space-between;align-items:center;opacity:0;transition:background .4s,border-color .4s;border-bottom:1px solid transparent;}
+#NAV.scrolled{background:rgba(8,8,8,.94);backdrop-filter:blur(14px);border-bottom-color:var(--G);}
+.nav-left{display:flex;align-items:center;gap:.8rem;}
+.nav-logo{font-family:'Anton',sans-serif;font-size:1.1rem;letter-spacing:.18em;color:var(--K);background:var(--Y);padding:.25rem .7rem;line-height:1;}
+.nav-sub{font-size:.5rem;letter-spacing:.25em;color:var(--G3);text-transform:uppercase;}
+.nav-links{display:flex;gap:2.5rem;list-style:none;}
+.nav-links a{color:var(--G3);text-decoration:none;font-size:.55rem;letter-spacing:.25em;text-transform:uppercase;transition:color .3s;}
+.nav-links a:hover,.nav-links a.on{color:var(--Y);}
+.nav-filters{display:flex;gap:.4rem;}
+.nfb{padding:.28rem .75rem;border:1px solid var(--G2);background:none;font-family:'IBM Plex Mono',monospace;font-size:.5rem;letter-spacing:.18em;text-transform:uppercase;color:var(--G3);cursor:none;transition:all .25s;}
+.nfb:hover,.nfb.on{border-color:var(--Y);color:var(--Y);background:rgba(212,255,0,.06);}
+
+/* ── SEARCH BAR ── */
+#SEARCHBAR{
+  position:fixed;top:0;left:0;right:0;z-index:1100;
+  background:rgba(8,8,8,.97);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--Y);
+  padding:1.2rem 2.5rem;
+  display:none;align-items:center;gap:1.5rem;
+}
+#SEARCHBAR.open{display:flex;}
+.search-label{font-size:.55rem;letter-spacing:.3em;text-transform:uppercase;color:var(--Y);flex-shrink:0;}
+#SEARCHINPUT{
+  flex:1;background:none;border:none;outline:none;
+  font-family:'IBM Plex Mono',monospace;font-size:1rem;letter-spacing:.05em;color:var(--W);
+  cursor:none;
+}
+#SEARCHINPUT::placeholder{color:var(--G2);}
+.search-close{font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:var(--G3);cursor:none;padding:.3rem .8rem;border:1px solid var(--G2);transition:all .25s;background:none;font-family:'IBM Plex Mono',monospace;}
+.search-close:hover{border-color:var(--Y);color:var(--Y);}
+.search-count{font-size:.52rem;letter-spacing:.2em;color:var(--G3);flex-shrink:0;}
+
+/* ── HERO ── */
+#HERO{min-height:100vh;position:relative;display:grid;grid-template-columns:1fr 1fr;overflow:hidden;}
+.hero-l{background:var(--Y);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:9rem 3rem 4rem;z-index:1;}
+.hero-l-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,0,0,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.06) 1px,transparent 1px);background-size:52px 52px;}
+.hero-archive-badge{position:absolute;top:2rem;left:3rem;display:flex;flex-direction:column;gap:.3rem;}
+.hero-archive-badge span{font-size:.48rem;letter-spacing:.28em;text-transform:uppercase;color:rgba(0,0,0,.38);}
+.hero-archive-badge strong{font-size:.48rem;letter-spacing:.2em;color:rgba(0,0,0,.65);font-weight:400;}
+.hero-title{font-family:'Anton',sans-serif;font-size:clamp(4rem,10vw,9.5rem);line-height:.84;letter-spacing:-.02em;color:var(--K);position:relative;z-index:1;}
+.ht-line{overflow:hidden;display:block;}
+.ht-w{display:inline-block;transform:translateY(108%);}
+.hero-desc-row{display:flex;align-items:flex-end;gap:2rem;margin-top:2.5rem;position:relative;z-index:1;opacity:0;transform:translateY(14px);}
+.hero-desc{font-family:'Noto Serif SC',sans-serif;font-weight:200;font-style:italic;font-size:.82rem;line-height:1.9;color:rgba(0,0,0,.55);max-width:260px;}
+.hero-actions{display:flex;gap:.6rem;margin-left:auto;flex-direction:column;align-items:flex-end;}
+.hero-btn{padding:.6rem 1.2rem;border:1.5px solid rgba(0,0,0,.25);background:none;font-family:'IBM Plex Mono',monospace;font-size:.5rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(0,0,0,.55);cursor:none;transition:all .25s;}
+.hero-btn:hover{background:rgba(0,0,0,.08);color:var(--K);}
+.hero-btn.primary{background:var(--K);color:var(--Y);border-color:var(--K);}
+.hero-r{background:var(--K);position:relative;overflow:hidden;border-left:1px solid var(--G);}
+#THREECANVAS{position:absolute;inset:0;width:100%!important;height:100%!important;}
+.hero-r-overlay{position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(ellipse 80% 80% at 50% 50%,transparent 50%,rgba(8,8,8,.7) 100%);}
+.hero-r-label{position:absolute;bottom:2rem;right:2.5rem;z-index:3;text-align:right;}
+.hero-r-label span{display:block;font-size:.48rem;letter-spacing:.25em;text-transform:uppercase;color:var(--G3);}
+.hero-r-label strong{font-size:.48rem;letter-spacing:.2em;color:var(--Y);font-weight:400;}
+
+/* ── TICKER ── */
+.ticker{overflow:hidden;border-top:1px solid var(--G);border-bottom:1px solid var(--G);background:var(--K2);padding:.85rem 0;}
+.ticker-t{display:flex;white-space:nowrap;animation:tick 24s linear infinite;}
+.ticker-t:hover{animation-play-state:paused;}
+.ti{display:inline-flex;align-items:center;gap:1.6rem;padding:0 1.6rem;font-family:'Anton',sans-serif;font-size:.95rem;letter-spacing:.1em;text-transform:uppercase;color:var(--G);flex-shrink:0;}
+.tid{width:5px;height:5px;border-radius:50%;background:var(--Y);flex-shrink:0;}
+@keyframes tick{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* ── FEED ── */
+#FEED{padding:0 2.5rem 6rem;}
+.feed-hdr{display:flex;justify-content:space-between;align-items:center;padding:3rem 0 2rem;border-bottom:1px solid var(--G);margin-bottom:2px;}
+.feed-hdr-l{display:flex;flex-direction:column;gap:.4rem;}
+.feed-title{font-size:.52rem;letter-spacing:.35em;text-transform:uppercase;color:var(--G3);}
+.feed-count{font-family:'Anton',sans-serif;font-size:1rem;letter-spacing:.12em;color:var(--Y);}
+.feed-sort{display:flex;gap:.8rem;align-items:center;}
+.search-trigger{padding:.28rem .75rem;border:1px solid var(--G2);background:none;font-family:'IBM Plex Mono',monospace;font-size:.5rem;letter-spacing:.18em;text-transform:uppercase;color:var(--G3);cursor:none;transition:all .25s;}
+.search-trigger:hover{border-color:var(--Y);color:var(--Y);}
+
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:1px;background:var(--G);}
+
+/* ── ENTRY ── */
+.e{background:var(--K);padding:2rem;position:relative;overflow:hidden;cursor:none;transition:background .35s;}
+.e:hover{background:var(--K3);}
+.e::after{content:'';position:absolute;left:0;top:0;bottom:0;width:0;background:var(--Y);transition:width .35s cubic-bezier(.77,0,.18,1);}
+.e:hover::after{width:2px;}
+.e.lime{background:var(--Y);color:var(--K);}
+.e.lime:hover{background:#caf000;}
+.e.lime::after{background:var(--K);}
+.e.lime .e-id,.e.lime .e-date,.e.lime .e-body{color:rgba(0,0,0,.5);}
+.e.lime .e-title{color:var(--K);}
+.e.lime .e-foot{border-top-color:rgba(0,0,0,.12);}
+/* spans */
+.e-w8{grid-column:span 8;}.e-w6{grid-column:span 6;}.e-w4{grid-column:span 4;}.e-w12{grid-column:span 12;}.e-w5{grid-column:span 5;}.e-w7{grid-column:span 7;}.e-w3{grid-column:span 3;}
+
+/* expand click */
+.e.expandable{cursor:none;}
+.e-expand-hint{font-size:.45rem;letter-spacing:.2em;text-transform:uppercase;color:var(--G2);transition:color .3s;display:flex;align-items:center;gap:.5rem;}
+.e:hover .e-expand-hint{color:var(--Y);}
+.e-expand-hint::before{content:'';width:8px;height:1px;background:currentColor;}
+.e.expanded .e-body{-webkit-line-clamp:unset;overflow:visible;}
+.e.expanded .e-expand-hint{color:var(--Y);}
+.e.expanded .e-expand-hint::after{content:' ↑';}
+
+.e-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;}
+.e-id{font-size:.46rem;letter-spacing:.28em;color:var(--G3);text-transform:uppercase;}
+.e-type{font-size:.46rem;letter-spacing:.16em;text-transform:uppercase;padding:.18rem .55rem;border:1px solid var(--G2);color:var(--G3);transition:border-color .3s,color .3s;}
+.e:hover .e-type{border-color:var(--Y);color:var(--Y);}
+.e-type.思考{border-color:rgba(212,255,0,.3);color:var(--Y);}
+.e-type.日记{border-color:rgba(240,237,229,.15);color:var(--W2);}
+.e-type.收藏{border-color:rgba(140,160,255,.2);color:rgba(170,185,255,.7);}
+.e.lime .e-type{border-color:rgba(0,0,0,.25);color:rgba(0,0,0,.55);}
+.e-title{font-family:'Noto Serif SC',sans-serif;font-weight:300;font-size:clamp(1rem,2.2vw,1.55rem);line-height:1.25;color:var(--W);margin-bottom:.9rem;letter-spacing:.02em;}
+.e-title.lg{font-size:clamp(1.5rem,3vw,2.3rem);}
+.e.lime .e-title{color:var(--K);}
+.e-body{font-family:'Noto Serif SC',sans-serif;font-weight:200;font-size:.8rem;line-height:1.9;color:var(--G3);display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;transition:all .4s;}
+.e-foot{display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;padding-top:1.1rem;border-top:1px solid var(--G);}
+.e-date{font-size:.46rem;letter-spacing:.22em;color:var(--G2);text-transform:uppercase;}
+.e-arrow{font-size:.8rem;color:var(--G2);transition:transform .3s,color .3s;}
+.e:hover .e-arrow{transform:translateX(4px);color:var(--Y);}
+.e.lime .e-arrow{color:rgba(0,0,0,.3);}
+.e.lime:hover .e-arrow{color:var(--K);}
+.e-bignum{font-family:'Anton',sans-serif;font-size:5rem;color:transparent;-webkit-text-stroke:1px rgba(212,255,0,.08);line-height:.85;margin-bottom:.4rem;pointer-events:none;}
+.e.lime .e-bignum{-webkit-text-stroke:1px rgba(0,0,0,.1);}
+.e-quote{font-family:'Noto Serif SC',sans-serif;font-weight:200;font-style:italic;font-size:clamp(1rem,2.3vw,1.7rem);line-height:1.6;color:var(--W2);letter-spacing:.03em;padding:.5rem 0;}
+.e.lime .e-quote{color:rgba(0,0,0,.65);}
+.e-quote-src{font-size:.46rem;letter-spacing:.25em;text-transform:uppercase;color:var(--G2);margin-top:.8rem;}
+.mi{display:flex;align-items:center;gap:1rem;padding:.65rem 0;border-bottom:1px solid var(--G);}
+.mi:last-child{border-bottom:none;}
+.e.lime .mi{border-bottom-color:rgba(0,0,0,.1);}
+.mi-i{font-size:.48rem;color:var(--G2);width:1.4rem;flex-shrink:0;}
+.mi-info{flex:1;}
+.mi-t{font-size:.76rem;letter-spacing:.04em;color:var(--W);margin-bottom:.18rem;}
+.e.lime .mi-t{color:var(--K);}
+.mi-s{font-size:.56rem;letter-spacing:.1em;color:var(--G3);}
+.mi-b{font-size:.42rem;letter-spacing:.14em;text-transform:uppercase;padding:.15rem .45rem;border:1px solid var(--G2);color:var(--G3);flex-shrink:0;}
+.mi-b.f{border-color:rgba(255,150,100,.2);color:rgba(255,180,130,.55);}
+.mi-b.b{border-color:rgba(100,200,255,.2);color:rgba(130,200,255,.55);}
+.mi-b.m{border-color:rgba(200,150,255,.2);color:rgba(210,170,255,.55);}
+
+/* no results */
+#NORESULTS{display:none;grid-column:span 12;padding:4rem 2rem;text-align:center;font-size:.6rem;letter-spacing:.28em;text-transform:uppercase;color:var(--G2);}
+#NORESULTS.show{display:block;}
+
+/* ── PHOTOS ── */
+#PHOTOS{padding:0 2.5rem 2.5rem;}
+.photos-hdr{display:flex;justify-content:space-between;align-items:center;padding:3rem 0 2rem;border-bottom:1px solid var(--G);margin-bottom:2px;}
+.photos-hdr-title{font-size:.52rem;letter-spacing:.35em;text-transform:uppercase;color:var(--G3);}
+.photos-hdr-title span{color:var(--Y);}
+.photo-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:1px;background:var(--G);}
+.photo-slot{background:var(--K2);position:relative;overflow:hidden;cursor:none;}
+.photo-slot.tall{grid-column:span 4;aspect-ratio:3/4;}
+.photo-slot.wide{grid-column:span 8;aspect-ratio:16/9;}
+.photo-slot.sq{grid-column:span 3;aspect-ratio:1;}
+.photo-slot.sq2{grid-column:span 6;aspect-ratio:4/3;}
+.photo-slot::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(212,255,0,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(212,255,0,.03) 1px,transparent 1px);background-size:28px 28px;}
+.photo-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;transition:background .35s;}
+.photo-slot:hover .photo-inner{background:rgba(212,255,0,.03);}
+.photo-slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .6s cubic-bezier(.25,.46,.45,.94);}
+.photo-slot:hover img{transform:scale(1.04);}
+.photo-placeholder-icon{font-size:1.5rem;color:var(--G);}
+.photo-placeholder-txt{font-size:.46rem;letter-spacing:.25em;text-transform:uppercase;color:var(--G2);}
+.photo-caption{position:absolute;bottom:0;left:0;right:0;padding:1rem;background:linear-gradient(transparent,rgba(8,8,8,.92));transform:translateY(100%);transition:transform .35s cubic-bezier(.77,0,.18,1);z-index:2;}
+.photo-slot:hover .photo-caption{transform:translateY(0);}
+.photo-caption span{font-size:.46rem;letter-spacing:.2em;text-transform:uppercase;color:var(--G3);}
+.photo-date{position:absolute;top:.8rem;left:.8rem;font-size:.44rem;letter-spacing:.2em;color:var(--G2);z-index:2;}
+/* lightbox trigger */
+.photo-slot.has-photo{cursor:none;}
+.photo-zoom-icon{position:absolute;top:.8rem;right:.8rem;z-index:3;width:28px;height:28px;border:1px solid rgba(212,255,0,.3);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--Y);opacity:0;transition:opacity .3s;}
+.photo-slot:hover .photo-zoom-icon{opacity:1;}
+
+/* ── LIGHTBOX ── */
+#LIGHTBOX{
+  position:fixed;inset:0;z-index:6000;
+  background:rgba(8,8,8,.97);
+  display:none;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .35s;
+}
+#LIGHTBOX.open{display:flex;opacity:1;}
+.lb-img{max-width:90vw;max-height:88vh;object-fit:contain;border:1px solid var(--G);}
+.lb-close{position:absolute;top:2rem;right:2.5rem;font-size:.55rem;letter-spacing:.3em;text-transform:uppercase;color:var(--G3);cursor:none;padding:.4rem 1rem;border:1px solid var(--G2);transition:all .25s;background:none;font-family:'IBM Plex Mono',monospace;}
+.lb-close:hover{border-color:var(--Y);color:var(--Y);}
+.lb-caption{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);font-size:.5rem;letter-spacing:.25em;text-transform:uppercase;color:var(--G3);}
+
+/* ── STATEMENT ── */
+#STMT{min-height:60vh;background:var(--Y);display:flex;align-items:center;justify-content:center;padding:6rem 3rem;position:relative;overflow:hidden;border-top:1px solid var(--G);}
+#STMT::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(0,0,0,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.05) 1px,transparent 1px);background-size:52px 52px;}
+.stmt-inner{position:relative;z-index:1;text-align:center;max-width:900px;}
+.stmt-label{font-size:.5rem;letter-spacing:.35em;text-transform:uppercase;color:rgba(0,0,0,.35);margin-bottom:2rem;}
+.stmt-text{font-family:'Anton',sans-serif;font-size:clamp(3.5rem,8vw,7.5rem);line-height:.88;letter-spacing:-.01em;color:var(--K);}
+.stmt-text .line{overflow:hidden;display:block;}
+.stmt-text .w{display:inline-block;transform:translateY(108%);}
+
+/* ── FOOTER ── */
+footer{border-top:1px solid var(--G);padding:2.5rem;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:2rem;}
+.f-name{font-family:'Anton',sans-serif;font-size:.9rem;letter-spacing:.15em;color:var(--K);background:var(--Y);padding:.2rem .6rem;display:inline-block;}
+.f-desc{font-size:.46rem;letter-spacing:.22em;color:var(--G3);text-transform:uppercase;margin-top:.4rem;}
+.f-mid{text-align:center;font-size:.46rem;letter-spacing:.2em;color:var(--G2);text-transform:uppercase;}
+.f-links{display:flex;justify-content:flex-end;gap:1.5rem;}
+.f-links a{font-size:.46rem;letter-spacing:.2em;text-transform:uppercase;color:var(--G3);text-decoration:none;transition:color .3s;}
+.f-links a:hover{color:var(--Y);}
+.f-status{display:flex;align-items:center;justify-content:flex-end;gap:.4rem;margin-top:.5rem;font-size:.44rem;letter-spacing:.18em;text-transform:uppercase;color:var(--G3);}
+.f-dot{width:4px;height:4px;border-radius:50%;background:var(--Y);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+
+/* ══════════════════════════════════════
+   ADMIN PANEL  (Shift+A to open)
+══════════════════════════════════════ */
+#ADMIN{
+  position:fixed;inset:0;z-index:5000;
+  background:rgba(8,8,8,.97);backdrop-filter:blur(20px);
+  display:none;flex-direction:column;
+  border-left:2px solid var(--Y);
+}
+#ADMIN.open{display:flex;}
+.admin-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:1.5rem 2.5rem;border-bottom:1px solid var(--G);
+  background:var(--Y);flex-shrink:0;
+}
+.admin-title{font-family:'Anton',sans-serif;font-size:1.2rem;letter-spacing:.15em;color:var(--K);}
+.admin-hint{font-size:.48rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(0,0,0,.5);}
+.admin-close{font-family:'Anton',sans-serif;font-size:.9rem;letter-spacing:.1em;color:var(--K);background:none;border:none;cursor:none;padding:.2rem .5rem;transition:opacity .3s;}
+.admin-close:hover{opacity:.5;}
+.admin-body{flex:1;overflow-y:auto;padding:2.5rem;display:grid;grid-template-columns:1fr 1fr;gap:2rem;}
+.admin-section{display:flex;flex-direction:column;gap:1rem;}
+.admin-section-title{font-size:.5rem;letter-spacing:.3em;text-transform:uppercase;color:var(--Y);margin-bottom:.5rem;padding-bottom:.5rem;border-bottom:1px solid var(--G);}
+.afield{display:flex;flex-direction:column;gap:.4rem;}
+.afield label{font-size:.48rem;letter-spacing:.2em;text-transform:uppercase;color:var(--G3);}
+.afield input,.afield textarea,.afield select{
+  background:var(--K2);border:1px solid var(--G2);
+  padding:.7rem 1rem;color:var(--W);
+  font-family:'IBM Plex Mono',monospace;font-size:.78rem;
+  outline:none;transition:border-color .25s;cursor:none;
+  resize:vertical;
+}
+.afield input:focus,.afield textarea:focus,.afield select:focus{border-color:var(--Y);}
+.afield select option{background:var(--K2);}
+.afield textarea{min-height:120px;line-height:1.7;}
+.admin-preview{
+  background:var(--K2);border:1px solid var(--G);padding:1.5rem;
+  display:flex;flex-direction:column;gap:1rem;
+}
+.admin-preview-label{font-size:.46rem;letter-spacing:.25em;text-transform:uppercase;color:var(--G3);}
+.admin-preview-title{font-family:'Noto Serif SC',sans-serif;font-size:1.1rem;line-height:1.3;color:var(--W);}
+.admin-preview-body{font-family:'Noto Serif SC',sans-serif;font-weight:200;font-size:.78rem;line-height:1.8;color:var(--G3);}
+.admin-actions{display:flex;gap:1rem;margin-top:auto;}
+.admin-btn{padding:.75rem 2rem;font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;cursor:none;transition:all .25s;border:none;}
+.admin-btn.primary{background:var(--Y);color:var(--K);}
+.admin-btn.primary:hover{background:#c8f000;}
+.admin-btn.secondary{background:none;border:1px solid var(--G2);color:var(--G3);}
+.admin-btn.secondary:hover{border-color:var(--Y);color:var(--Y);}
+.admin-entries-list{display:flex;flex-direction:column;gap:.5rem;max-height:300px;overflow-y:auto;}
+.admin-entry-item{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:.7rem 1rem;background:var(--K2);border:1px solid var(--G);
+}
+.aei-info{display:flex;flex-direction:column;gap:.25rem;}
+.aei-title{font-size:.72rem;letter-spacing:.04em;color:var(--W);}
+.aei-meta{font-size:.46rem;letter-spacing:.18em;text-transform:uppercase;color:var(--G3);}
+.aei-del{background:none;border:1px solid var(--G2);color:var(--G3);font-family:'IBM Plex Mono',monospace;font-size:.45rem;letter-spacing:.15em;text-transform:uppercase;padding:.2rem .6rem;cursor:none;transition:all .25s;}
+.aei-del:hover{border-color:#ff4444;color:#ff4444;}
+.admin-saved-toast{
+  position:fixed;bottom:2rem;right:2.5rem;z-index:6000;
+  background:var(--Y);color:var(--K);
+  padding:.6rem 1.5rem;font-size:.52rem;letter-spacing:.2em;text-transform:uppercase;
+  transform:translateY(100px);transition:transform .35s cubic-bezier(.77,0,.18,1);
+  pointer-events:none;
+}
+.admin-saved-toast.show{transform:translateY(0);}
+
+/* scroll reveal */
+.sr{opacity:0;transform:translateY(22px);transition:opacity .7s,transform .7s;}
+.sr.vis{opacity:1;transform:translateY(0);}
+.sr.d1{transition-delay:.07s;}.sr.d2{transition-delay:.14s;}.sr.d3{transition-delay:.21s;}
+.e.hidden{opacity:0;pointer-events:none;transform:scale(.97);transition:all .3s;}
+.e.search-hidden{display:none;}
+</style>
+</head>
+<body>
+
+<div id="LOAD">
+  <div class="ld-name"><span>AnqingZe</span></div>
+  <div class="ld-sub"><span>ARCHIVE</span></div>
+  <div class="ld-bar-wrap"><div class="ld-fill" id="LF"></div></div>
+  <div class="ld-row"><div class="ld-pct" id="LP">000</div><div class="ld-status" id="LS">LOADING</div></div>
+</div>
+
+<div id="CUR"></div><div id="CUR2"></div><div id="BLOB"></div>
+
+<!-- SEARCH BAR -->
+<div id="SEARCHBAR">
+  <div class="search-label">搜索档案</div>
+  <input type="text" id="SEARCHINPUT" placeholder="输入关键词...">
+  <div class="search-count" id="SEARCHCOUNT"></div>
+  <button class="search-close" id="SEARCHCLOSE">关闭 ✕</button>
+</div>
+
+<!-- NAV -->
+<nav id="NAV">
+  <div class="nav-left">
+    <div class="nav-logo">AQZ</div>
+    <div class="nav-sub">PERSONAL ARCHIVE · v2026</div>
+  </div>
+  <ul class="nav-links">
+    <li><a href="javascript:void(0)" onclick="navTo('FEED')" class="on">档案</a></li>
+    <li><a href="javascript:void(0)" onclick="navTo('PHOTOS')">照片</a></li>
+    <li><a href="javascript:void(0)" onclick="navTo('STMT')">关于</a></li>
+  </ul>
+  <div class="nav-filters">
+    <button class="nfb on" data-f="all">全部</button>
+    <button class="nfb" data-f="思考">思考</button>
+    <button class="nfb" data-f="日记">日记</button>
+    <button class="nfb" data-f="收藏">收藏</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="HERO">
+  <div class="hero-l">
+    <div class="hero-l-grid"></div>
+    <div class="hero-archive-badge">
+      <span>ARCHIVE SYSTEM</span>
+      <strong>AQZ-PERSONAL-2026</strong>
+      <span id="HDATE" style="margin-top:.4rem;"></span>
+    </div>
+    <h1 class="hero-title">
+      <span class="ht-line"><span class="ht-w">AQZ</span></span>
+      <span class="ht-line"><span class="ht-w">ARCHIVE</span></span>
+    </h1>
+    <div class="hero-desc-row">
+      <p class="hero-desc">思考的轨迹、生活的碎片、发现的好作品——一切值得被记录的，都在这里落脚。</p>
+      <div class="hero-actions">
+        <button class="hero-btn primary" onclick="openAdmin()">+ 写新条目</button>
+        <button class="hero-btn" onclick="openSearch()">⌕ 搜索</button>
+      </div>
+    </div>
+  </div>
+  <div class="hero-r" id="HERO_R">
+    <canvas id="THREECANVAS"></canvas>
+    <div class="hero-r-overlay"></div>
+    <div class="hero-r-label">
+      <span>THOUGHT LATTICE</span>
+      <strong>AQZ-OBJECT-001</strong>
+    </div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker"><div class="ticker-t">
+  <div class="ti"><div class="tid"></div>思考</div><div class="ti"><div class="tid"></div>日记</div>
+  <div class="ti"><div class="tid"></div>收藏</div><div class="ti"><div class="tid"></div>照片</div>
+  <div class="ti"><div class="tid"></div>引用</div><div class="ti"><div class="tid"></div>书影音</div>
+  <div class="ti"><div class="tid"></div>碎片</div><div class="ti"><div class="tid"></div>思考</div>
+  <div class="ti"><div class="tid"></div>日记</div><div class="ti"><div class="tid"></div>收藏</div>
+  <div class="ti"><div class="tid"></div>照片</div><div class="ti"><div class="tid"></div>引用</div>
+  <div class="ti"><div class="tid"></div>书影音</div><div class="ti"><div class="tid"></div>碎片</div>
+</div></div>
+
+<!-- FEED -->
+<section id="FEED">
+  <div class="feed-hdr">
+    <div class="feed-hdr-l">
+      <div class="feed-title">// ALL RECORDS — CHRONOLOGICAL</div>
+      <div class="feed-count" id="ENTRYCOUNT">— ENTRIES</div>
+    </div>
+    <div class="feed-sort">
+      <button class="search-trigger" onclick="openSearch()">⌕ 搜索条目</button>
+      <span style="font-size:.5rem;letter-spacing:.2em;color:var(--G2);text-transform:uppercase;">LATEST FIRST</span>
+    </div>
+  </div>
+
+  <!-- DYNAMIC entries injected here by JS -->
+  <div class="grid" id="GRID">
+    <div id="NORESULTS">未找到匹配条目 — NO RESULTS FOUND</div>
+  </div>
+</section>
+
+<!-- PHOTOS -->
+<section id="PHOTOS">
+  <div class="photos-hdr sr">
+    <div class="photos-hdr-title">// <span>照片档案</span> — PHOTO RECORDS</div>
+    <div style="font-size:.5rem;letter-spacing:.2em;color:var(--G2);text-transform:uppercase;">点击放大查看</div>
+  </div>
+  <div class="photo-grid">
+    <div class="photo-slot tall sr" data-caption="照片 001" data-src="">
+      <div class="photo-inner"><div class="photo-placeholder-icon">⬜</div><div class="photo-placeholder-txt">AQZ-P001</div></div>
+      <div class="photo-date">2026.03</div>
+      <div class="photo-caption"><span>在这里写照片标题</span></div>
+      <div class="photo-zoom-icon">⤢</div>
+    </div>
+    <div class="photo-slot wide sr d1" data-caption="照片 002" data-src="">
+      <div class="photo-inner"><div class="photo-placeholder-icon">⬜</div><div class="photo-placeholder-txt">AQZ-P002 · 横幅大图</div></div>
+      <div class="photo-date">2026.02</div>
+      <div class="photo-caption"><span>横幅大照片位</span></div>
+      <div class="photo-zoom-icon">⤢</div>
+    </div>
+    <div class="photo-slot sq sr" data-caption="碎片 001" data-src=""><div class="photo-inner"><div class="photo-placeholder-icon">⬜</div><div class="photo-placeholder-txt">P003</div></div><div class="photo-caption"><span>碎片 001</span></div><div class="photo-zoom-icon">⤢</div></div>
+    <div class="photo-slot sq sr d1" data-caption="碎片 002" data-src=""><div class="photo-inner"><div class="photo-placeholder-icon">⬜</div><div class="photo-placeholder-txt">P004</div></div><div class="photo-caption"><span>碎片 002</span></div><div class="photo-zoom-icon">⤢</div></div>
+    <div class="photo-slot sq2 sr d2" data-caption="特写大图" data-src=""><div class="photo-inner"><div class="photo-placeholder-icon">⬜</div><div class="photo-placeholder-txt">AQZ-P005 · FEATURED</div></div><div class="photo-caption"><span>特写大图</span></div><div class="photo-zoom-icon">⤢</div></div>
+    <div class="photo-slot sq sr d3" data-caption="碎片 003" data-src=""><div class="photo-inner"><div class="photo-placeholder-icon">⬜</div><div class="photo-placeholder-txt">P006</div></div><div class="photo-caption"><span>碎片 003</span></div><div class="photo-zoom-icon">⤢</div></div>
+  </div>
+</section>
+
+<!-- STATEMENT -->
+<section id="STMT">
+  <div class="stmt-inner">
+    <div class="stmt-label">// AQZ-PERSONAL-STATEMENT-2026</div>
+    <div class="stmt-text">
+      <span class="line"><span class="w">这个档案室</span></span>
+      <span class="line"><span class="w">不是为了展示</span></span>
+      <span class="line" style="color:rgba(0,0,0,.25)"><span class="w">而是为了</span></span>
+      <span class="line"><span class="w">留存</span></span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div><div class="f-name">AQZ</div><div class="f-desc">AnqingZe · Personal Archive · Since 2026</div></div>
+  <div class="f-mid">© 2026 — ALL RECORDS BELONG TO THE AUTHOR</div>
+  <div>
+    <div class="f-links"><a href="#">Instagram</a><a href="#">小红书</a><a href="#">Letterboxd</a><a href="#">邮件</a></div>
+    <div class="f-status"><div class="f-dot"></div>ARCHIVE ONLINE</div>
+  </div>
+</footer>
+
+<!-- LIGHTBOX -->
+<div id="LIGHTBOX">
+  <button class="lb-close" id="LBCLOSE">关闭 ✕</button>
+  <img class="lb-img" id="LBIMG" src="" alt="">
+  <div class="lb-caption" id="LBCAP"></div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="ADMIN">
+  <div class="admin-header">
+    <div>
+      <div class="admin-title">AQZ ARCHIVE — 管理面板</div>
+      <div class="admin-hint">按 Shift+A 关闭 · 所有内容自动保存到本地</div>
+    </div>
+    <button class="admin-close" onclick="closeAdmin()">✕ 关闭</button>
+  </div>
+  <div class="admin-body">
+    <!-- NEW ENTRY FORM -->
+    <div class="admin-section">
+      <div class="admin-section-title">新建条目</div>
+      <div class="afield">
+        <label>标题</label>
+        <input type="text" id="A_TITLE" placeholder="条目标题...">
+      </div>
+      <div class="afield">
+        <label>类型</label>
+        <select id="A_TYPE">
+          <option value="思考">思考</option>
+          <option value="日记">日记</option>
+          <option value="收藏">收藏</option>
+        </select>
+      </div>
+      <div class="afield">
+        <label>正文内容</label>
+        <textarea id="A_BODY" placeholder="写下你的思考、今天发生的事、或者值得收藏的东西..."></textarea>
+      </div>
+      <div class="afield">
+        <label>日期（留空则自动填今天）</label>
+        <input type="text" id="A_DATE" placeholder="2026.03.11">
+      </div>
+      <!-- preview -->
+      <div class="admin-preview">
+        <div class="admin-preview-label">预览</div>
+        <div class="admin-preview-title" id="PREV_T">标题将在这里显示</div>
+        <div class="admin-preview-body" id="PREV_B">正文将在这里预览...</div>
+      </div>
+      <div class="admin-actions">
+        <button class="admin-btn primary" onclick="saveEntry()">保存条目 →</button>
+        <button class="admin-btn secondary" onclick="clearForm()">清空</button>
+      </div>
+    </div>
+
+    <!-- EXISTING ENTRIES -->
+    <div class="admin-section">
+      <div class="admin-section-title">已有条目 <span id="ELIST_COUNT" style="color:var(--G3)"></span></div>
+      <div class="admin-entries-list" id="ADMIN_LIST"></div>
+      <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--G);">
+        <div class="admin-section-title">使用说明</div>
+        <div style="font-size:.5rem;line-height:2;color:var(--G3);letter-spacing:.06em;">
+          · 在这里写的条目会保存在<span style="color:var(--Y)">浏览器本地</span><br>
+          · 换设备或清除浏览器数据后会消失<br>
+          · 想永久保存：把新条目复制进 HTML 文件并上传 GitHub<br>
+          · 快捷键：<span style="color:var(--W)">Shift+A</span> 开/关管理面板<br>
+          · 快捷键：<span style="color:var(--W)">Shift+S</span> 开/关搜索
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="admin-saved-toast" id="TOAST">✓ 条目已保存</div>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+/* ── CURSOR + BLOB ── */
+const CUR=document.getElementById('CUR'),CUR2=document.getElementById('CUR2'),BLOB=document.getElementById('BLOB');
+let mx=0,my=0,cx=0,cy=0;
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX;my=e.clientY;
+  CUR.style.left=mx+'px';CUR.style.top=my+'px';
+  BLOB.style.left=mx+'px';BLOB.style.top=my+'px';
+});
+(function loop(){cx+=(mx-cx)*.1;cy+=(my-cy)*.1;CUR2.style.left=cx+'px';CUR2.style.top=cy+'px';requestAnimationFrame(loop);})();
+function addHover(sel){document.querySelectorAll(sel).forEach(el=>{el.addEventListener('mouseenter',()=>document.body.classList.add('hov'));el.addEventListener('mouseleave',()=>document.body.classList.remove('hov'));});}
+addHover('a,button,.e,.photo-slot');
+const heroObs=new IntersectionObserver(es=>{BLOB.style.opacity=es[0].isIntersecting?'1':'0';},{threshold:.1});
+heroObs.observe(document.getElementById('HERO'));
+
+/* ── THREE.JS ── */
+(function(){
+  const canvas=document.getElementById('THREECANVAS'),container=document.getElementById('HERO_R');
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setClearColor(0x000000,0);
+  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(45,1,0.1,100);
+  camera.position.z=4.5;
+  function resize(){const w=container.clientWidth,h=container.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();}
+  resize();window.addEventListener('resize',resize);
+  const geo=new THREE.IcosahedronGeometry(1.4,2);
+  const wm=new THREE.MeshBasicMaterial({color:0xd4ff00,wireframe:true,transparent:true,opacity:.18});
+  const wMesh=new THREE.Mesh(geo,wm);scene.add(wMesh);
+  const sm=new THREE.MeshBasicMaterial({color:0x111111,transparent:true,opacity:.7,side:THREE.BackSide});
+  scene.add(new THREE.Mesh(geo,sm));
+  const geo2=new THREE.OctahedronGeometry(2,1);
+  const wm2=new THREE.MeshBasicMaterial({color:0xd4ff00,wireframe:true,transparent:true,opacity:.05});
+  const w2=new THREE.Mesh(geo2,wm2);scene.add(w2);
+  const ptGeo=new THREE.BufferGeometry().setFromPoints(Array.from({length:120},()=>new THREE.Vector3(Math.random()*2-1,Math.random()*2-1,Math.random()*2-1).normalize().multiplyScalar(1.42+Math.random()*.08)));
+  const pts=new THREE.Points(ptGeo,new THREE.PointsMaterial({color:0xd4ff00,size:.025,transparent:true,opacity:.5}));
+  scene.add(pts);
+  let isDrag=false,px=0,py=0,ry=0,rx=0,vx=0,vy=0,t=0;
+  container.addEventListener('mousedown',e=>{isDrag=true;px=e.clientX;py=e.clientY;});
+  window.addEventListener('mouseup',()=>isDrag=false);
+  window.addEventListener('mousemove',e=>{if(!isDrag)return;vx=(e.clientX-px)*.008;vy=(e.clientY-py)*.008;ry+=vx;rx+=vy;px=e.clientX;py=e.clientY;});
+  (function animate(){requestAnimationFrame(animate);t+=.005;
+    if(!isDrag){vx*=.94;vy*=.94;ry+=.004+vx;rx+=.001+vy;}
+    wMesh.rotation.y=ry;wMesh.rotation.x=rx;
+    w2.rotation.y=-ry*.4;w2.rotation.x=rx*.3+Math.sin(t)*.05;
+    pts.rotation.y=ry*.8;pts.rotation.x=rx*.8;
+    const sc=1+Math.sin(t*1.1)*.03;wMesh.scale.setScalar(sc);pts.scale.setScalar(sc);
+    renderer.render(scene,camera);
+  })();
+})();
+
+/* ── DATA ── */
+const DEFAULT_ENTRIES=[
+  {id:'AQZ-024',type:'思考',title:'人为什么需要记录？',body:'记录不是为了回忆，而是为了让当下变得真实。当你把一件事写下来的那一刻，它才真正发生了。我越来越觉得，未被记录的经验某种意义上是不存在的——它只是在神经元之间漂浮的噪声，终将消散。\n\n这个档案室就是我对抗遗忘的方式。不是为了日后翻看，而是为了让每一个当下，在发生的那一刻，拥有重量。',date:'2026.03.08',span:8,lime:true},
+  {id:'AQZ-023',type:'日记',title:'三月第一周',body:'窗外下雨，煮了一壶茶，重新翻出了 Tarkovsky 的《雕刻时光》。有些书只有在特定天气里才能读进去。\n\n下午去了一家新开的咖啡馆，坐在角落里，听到隔壁桌两个人在讨论他们的创业计划，兴奋得压低声音。我喜欢这种时刻——别人的热情是会传染的。',date:'2026.03.07',span:4},
+  {id:'AQZ-022',type:'思考',title:'「风格不是一种选择，它是你所有选择的总和。」',body:'来自某本忘了名字的设计书。这句话说的不只是设计，它说的是人。你的风格，就是你在无数个小事上的选择——你关注什么，你忽视什么，你在什么地方停下来，你从什么地方加速。',date:'2026.03.02',span:12,quote:true},
+  {id:'AQZ-020',type:'思考',title:'关于「无聊」的价值',body:'我们这一代人是第一批真正不会感到无聊的人。无聊曾经是创造力的温床，而现在它被无限滚动彻底消灭了。每次想拿起手机的冲动，我都试图问自己：这个空白是不是正在孕育什么？\n\n实验：某个周日，我把手机放进抽屉。前一个小时很难熬，然后我开始写了四页东西。',date:'2026.02.28',span:6},
+  {id:'AQZ-019',type:'日记',title:'二月值得记下的瞬间',body:'骑车经过一条不认识的街道，阳光的角度刚好让整条路变成金色。在书店里站了两个小时，最后什么也没买，但感觉很好。和一个许久没联系的朋友打了三个小时的电话，说了很多废话，但意外地觉得被接住了。\n\n好的月份不是发生了什么大事，而是这些小事积累起来，让你在月底回头看的时候觉得：值了。',date:'2026.02.26',span:6},
+  {id:'AQZ-018',type:'思考',title:'「酷」是什么？',body:'我观察了很久，发现真正酷的人有一个共同特征：他们对自己的行为有一种内在自洽性，不依赖外部认可来维持。酷不是一种风格，而是一种与自我的关系——一种在任何场合都不感到需要解释自己的淡定。\n\n模仿来的酷是最不酷的东西。',date:'2026.02.14',span:12,lime:true},
+];
+
+function getEntries(){
+  const stored=localStorage.getItem('aqz_entries');
+  const custom=stored?JSON.parse(stored):[];
+  return [...custom,...DEFAULT_ENTRIES];
+}
+function getUserEntries(){
+  const stored=localStorage.getItem('aqz_entries');
+  return stored?JSON.parse(stored):[];
+}
+function saveUserEntries(arr){localStorage.setItem('aqz_entries',JSON.stringify(arr));}
+
+/* ── RENDER ENTRIES ── */
+function renderEntries(entries){
+  const grid=document.getElementById('GRID');
+  // keep NORESULTS div
+  const nr=document.getElementById('NORESULTS');
+  grid.innerHTML='';
+  grid.appendChild(nr);
+
+  if(entries.length===0){nr.classList.add('show');document.getElementById('ENTRYCOUNT').textContent='0 ENTRIES';return;}
+  nr.classList.remove('show');
+  document.getElementById('ENTRYCOUNT').textContent=entries.length+' ENTRIES';
+
+  entries.forEach((en,i)=>{
+    const div=document.createElement('div');
+    const span=en.span||6;
+    div.className=`e e-w${span} sr${en.lime?' lime':''}${i<4?' d'+i:''}`;
+    div.dataset.type=en.type;
+    div.dataset.title=en.title;
+    div.dataset.body=en.body||'';
+
+    if(en.quote){
+      div.innerHTML=`
+        <div class="e-hd"><div class="e-id">${en.id}</div><div class="e-type ${en.type}">${en.type} · 引用</div></div>
+        <div class="e-quote">${en.title}</div>
+        <div class="e-quote-src">${en.body||''} / ${en.date}</div>`;
+    } else {
+      div.innerHTML=`
+        <div class="e-hd"><div class="e-id">${en.id}</div><div class="e-type ${en.type}">${en.type}</div></div>
+        <div class="e-title${span>=8?' lg':''}">${en.title}</div>
+        <div class="e-body">${(en.body||'').replace(/\n/g,'<br>')}</div>
+        <div class="e-foot">
+          <div class="e-date">${en.date}</div>
+          <div style="display:flex;align-items:center;gap:1rem;">
+            <span class="e-expand-hint">展开全文</span>
+            <div class="e-arrow">→</div>
+          </div>
+        </div>`;
+      // expand on click
+      div.addEventListener('click',()=>{
+        div.classList.toggle('expanded');
+        const hint=div.querySelector('.e-expand-hint');
+        if(hint) hint.textContent=div.classList.contains('expanded')?'收起 ↑':'展开全文';
+      });
+    }
+    grid.appendChild(div);
+  });
+
+  // re-observe for scroll reveal
+  const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('vis');obs.unobserve(e.target);}});},{threshold:.06});
+  grid.querySelectorAll('.sr').forEach(el=>obs.observe(el));
+  addHover('.e');
+  updateAdminList();
+}
+
+/* ── FILTER ── */
+let currentFilter='all';
+function applyFilter(f){
+  currentFilter=f;
+  document.querySelectorAll('.e').forEach(c=>{
+    c.classList.toggle('hidden',f!=='all'&&c.dataset.type!==f);
+  });
+}
+document.querySelectorAll('.nfb').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.nfb').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    applyFilter(btn.dataset.f);
+  });
+});
+
+/* ── SEARCH ── */
+function navTo(id){const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth'});}
+function openSearch(){document.getElementById('SEARCHBAR').classList.add('open');document.getElementById('SEARCHINPUT').focus();}
+function closeSearch(){
+  document.getElementById('SEARCHBAR').classList.remove('open');
+  document.getElementById('SEARCHINPUT').value='';
+  document.querySelectorAll('.e').forEach(e=>e.classList.remove('search-hidden'));
+  document.getElementById('NORESULTS').classList.remove('show');
+  renderEntries(getEntries());
+  applyFilter(currentFilter);
+}
+document.getElementById('SEARCHCLOSE').addEventListener('click',closeSearch);
+document.getElementById('SEARCHINPUT').addEventListener('input',function(){
+  const q=this.value.toLowerCase().trim();
+  if(!q){document.querySelectorAll('.e').forEach(e=>e.classList.remove('search-hidden'));document.getElementById('SEARCHCOUNT').textContent='';document.getElementById('NORESULTS').classList.remove('show');return;}
+  let count=0;
+  document.querySelectorAll('.e').forEach(card=>{
+    const t=(card.dataset.title||'').toLowerCase();
+    const b=(card.dataset.body||'').toLowerCase();
+    const match=t.includes(q)||b.includes(q);
+    card.classList.toggle('search-hidden',!match);
+    if(match)count++;
+  });
+  document.getElementById('SEARCHCOUNT').textContent=count+' 条结果';
+  document.getElementById('NORESULTS').classList.toggle('show',count===0);
+});
+
+/* ── LIGHTBOX ── */
+document.querySelectorAll('.photo-slot').forEach(slot=>{
+  slot.addEventListener('click',()=>{
+    const src=slot.dataset.src;
+    const cap=slot.dataset.caption||'';
+    if(!src){return;}// no photo yet
+    const lb=document.getElementById('LIGHTBOX');
+    document.getElementById('LBIMG').src=src;
+    document.getElementById('LBCAP').textContent=cap;
+    lb.style.display='flex';
+    requestAnimationFrame(()=>lb.style.opacity='1');
+  });
+});
+function closeLB(){const lb=document.getElementById('LIGHTBOX');lb.style.opacity='0';setTimeout(()=>{lb.style.display='none';},350);}
+document.getElementById('LBCLOSE').addEventListener('click',closeLB);
+document.getElementById('LIGHTBOX').addEventListener('click',e=>{if(e.target===document.getElementById('LIGHTBOX'))closeLB();});
+
+/* ── ADMIN ── */
+function openAdmin(){document.getElementById('ADMIN').classList.add('open');}
+function closeAdmin(){document.getElementById('ADMIN').classList.remove('open');}
+function clearForm(){document.getElementById('A_TITLE').value='';document.getElementById('A_BODY').value='';document.getElementById('A_DATE').value='';document.getElementById('PREV_T').textContent='标题将在这里显示';document.getElementById('PREV_B').textContent='正文将在这里预览...';}
+// live preview
+['A_TITLE','A_BODY'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',()=>{
+    document.getElementById('PREV_T').textContent=document.getElementById('A_TITLE').value||'标题将在这里显示';
+    document.getElementById('PREV_B').textContent=document.getElementById('A_BODY').value||'正文将在这里预览...';
+  });
+});
+function saveEntry(){
+  const title=document.getElementById('A_TITLE').value.trim();
+  const body=document.getElementById('A_BODY').value.trim();
+  const type=document.getElementById('A_TYPE').value;
+  if(!title){document.getElementById('A_TITLE').focus();return;}
+  const d=new Date();
+  const date=document.getElementById('A_DATE').value.trim()||
+    d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0');
+  const existing=getUserEntries();
+  const newEntry={
+    id:'AQZ-U'+String(existing.length+1).padStart(3,'0'),
+    type,title,body,date,span:6
+  };
+  existing.unshift(newEntry);
+  saveUserEntries(existing);
+  clearForm();
+  renderEntries(getEntries());
+  applyFilter(currentFilter);
+  showToast();
+}
+function showToast(){
+  const t=document.getElementById('TOAST');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+function deleteEntry(id){
+  const arr=getUserEntries().filter(e=>e.id!==id);
+  saveUserEntries(arr);
+  renderEntries(getEntries());
+  applyFilter(currentFilter);
+  updateAdminList();
+}
+function updateAdminList(){
+  const list=document.getElementById('ADMIN_LIST');
+  const entries=getUserEntries();
+  document.getElementById('ELIST_COUNT').textContent='('+entries.length+' 条自定义)';
+  if(entries.length===0){list.innerHTML='<div style="font-size:.5rem;letter-spacing:.18em;color:var(--G3);padding:1rem 0;">还没有自定义条目</div>';return;}
+  list.innerHTML=entries.map(e=>`
+    <div class="admin-entry-item">
+      <div class="aei-info">
+        <div class="aei-title">${e.title.substring(0,30)}${e.title.length>30?'...':''}</div>
+        <div class="aei-meta">${e.id} · ${e.type} · ${e.date}</div>
+      </div>
+      <button class="aei-del" onclick="deleteEntry('${e.id}')">删除</button>
+    </div>`).join('');
+}
+
+/* ── KEYBOARD SHORTCUTS ── */
+document.addEventListener('keydown',e=>{
+  if(e.shiftKey&&e.key==='A'){e.preventDefault();document.getElementById('ADMIN').classList.toggle('open');}
+  if(e.shiftKey&&e.key==='S'){e.preventDefault();document.getElementById('SEARCHBAR').classList.contains('open')?closeSearch():openSearch();}
+  if(e.key==='Escape'){closeAdmin();closeSearch();closeLB();}
+});
+
+/* ── LOADER ── */
+const LF=document.getElementById('LF'),LP=document.getElementById('LP'),LS=document.getElementById('LS');
+const stages=['LOADING','PARSING RECORDS','BUILDING ARCHIVE','READY'];
+gsap.to('.ld-name span',{y:'0%',duration:.8,ease:'power4.out',delay:.1});
+gsap.to('.ld-sub span',{y:'0%',duration:.8,ease:'power4.out',delay:.22});
+let p=0;
+const iv=setInterval(()=>{
+  p+=Math.random()*11+2;
+  if(p>=100){p=100;clearInterval(iv);setTimeout(launch,350);}
+  LF.style.width=p+'%';
+  LP.textContent=String(Math.round(p)).padStart(3,'0');
+  LS.textContent=stages[Math.floor(p/25)]||stages[3];
+},80);
+
+function launch(){
+  gsap.timeline({onComplete:initPage})
+    .to('#LOAD',{yPercent:-100,duration:1,ease:'expo.inOut',delay:.1})
+    .to('#NAV',{opacity:1,duration:.5},'-=.3');
+}
+
+function initPage(){
+  const d=new Date();
+  document.getElementById('HDATE').textContent=
+    d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0');
+
+  gsap.to('.ht-w',{y:'0%',duration:1.1,ease:'power4.out',stagger:.12,delay:.05});
+  gsap.to('.hero-desc-row',{opacity:1,y:0,duration:.9,ease:'power3.out',delay:.6});
+
+  gsap.to('.stmt-text .w',{
+    y:'0%',duration:1,ease:'power4.out',stagger:.1,
+    scrollTrigger:{trigger:'#STMT',start:'top 72%'}
+  });
+
+  const obs=new IntersectionObserver(es=>{
+    es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('vis');obs.unobserve(e.target);}});
+  },{threshold:.06});
+  document.querySelectorAll('.sr').forEach(el=>obs.observe(el));
+
+  window.addEventListener('scroll',()=>{
+    document.getElementById('NAV').classList.toggle('scrolled',window.scrollY>80);
+  });
+
+  // render entries from data
+  renderEntries(getEntries());
+}
+</script>
+</body>
+</html>
+
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,700;1,300&family=Noto+Serif+SC:wght@200;300;400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
